@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Solar Planner</title>
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+	<style>
+		:root {
+			--bg: #0f172a;
+			--panel: #1e293b;
+			--border: #334155;
+			--text: #f1f5f9;
+			--accent: #fbbf24;
+			--accent-dim: rgba(251, 191, 36, 0.2);
+			--danger: #ef4444;
+			--face-front: linear-gradient(135deg, #1d4ed8 0%, #172554 100%);
+			--face-back: #64748b;
+		}
+
+		body {
+			font-family: 'Segoe UI', system-ui, sans-serif;
+			background-color: var(--bg);
+			color: var(--text);
+			margin: 0;
+			display: flex;
+			flex-direction: column;
+			height: 100vh;
+			overflow: hidden;
+		}
+
+		/* LAYOUT */
+		header {
+			height: 50px;
+			background: var(--panel);
+			border-bottom: 1px solid var(--border);
+			display: flex;
+			align-items: center;
+			padding: 0 20px;
+			justify-content: space-between;
+		}
+
+		h1 {
+			margin: 0;
+			font-size: 1.1rem;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			color: var(--accent);
+		}
+
+		.main {
+			display: flex;
+			flex: 1;
+			overflow: hidden;
+		}
+
+		/* CONTROLS (LEFT) */
+		.sidebar {
+			width: 300px;
+			background: var(--panel);
+			border-right: 1px solid var(--border);
+			display: flex;
+			flex-direction: column;
+			padding: 20px;
+			gap: 20px;
+			overflow-y: auto;
+			z-index: 2;
+		}
+
+		.group {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+		}
+
+		label {
+			font-size: 0.8rem;
+			font-weight: 600;
+			color: #94a3b8;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+		}
+
+		.val {
+			float: right;
+			color: var(--text);
+			font-weight: bold;
+		}
+
+		input[type=range] {
+			width: 100%;
+			accent-color: var(--accent);
+			cursor: pointer;
+		}
+
+		.row {
+			display: flex;
+			gap: 10px;
+			align-items: center;
+		}
+
+		input[type=number] {
+			background: #0f172a;
+			border: 1px solid var(--border);
+			color: white;
+			padding: 6px;
+			border-radius: 4px;
+			width: 60px;
+			text-align: center;
+			font-weight: bold;
+		}
+
+		/* VIEWPORT (CENTER) */
+		.viewport {
+			flex: 1;
+			position: relative;
+			background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+			perspective: 1000px;
+			overflow: hidden;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			cursor: grab;
+			user-select: none;
+		}
+
+		.viewport:active {
+			cursor: grabbing;
+		}
+
+		.world {
+			position: relative;
+			transform-style: preserve-3d;
+			transform: rotateX(60deg) rotateZ(0deg);
+			/* Camera */
+		}
+
+		/* Compass Floor */
+		.floor {
+			position: absolute;
+			width: 600px;
+			height: 600px;
+			top: -300px;
+			left: -300px;
+			border: 1px dashed #475569;
+			border-radius: 50%;
+			transform: translateZ(0px);
+		}
+
+		.dir {
+			position: absolute;
+			font-weight: bold;
+			font-size: 2rem;
+			color: #334155;
+		}
+
+		.n {
+			top: 20px;
+			left: 50%;
+			transform: translateX(-50%);
+		}
+
+		.s {
+			bottom: 20px;
+			left: 50%;
+			transform: translateX(-50%);
+		}
+
+		.e {
+			right: 20px;
+			top: 50%;
+			transform: translateY(-50%);
+		}
+
+		.w {
+			left: 20px;
+			top: 50%;
+			transform: translateY(-50%);
+		}
+
+		/* Panel Model */
+		.rig {
+			position: absolute;
+			transform-style: preserve-3d;
+		}
+
+		.panel-obj {
+			position: absolute;
+			width: 240px;
+			height: 160px;
+			top: -80px;
+			left: -120px;
+			transform-style: preserve-3d;
+		}
+
+		.face {
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			backface-visibility: hidden;
+			border: 2px solid #64748b;
+			border-radius: 4px;
+		}
+
+		.front {
+			background: var(--face-front);
+			background-image:
+				linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+				linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+			background-size: 60px 80px;
+			box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+		}
+
+		.front::after {
+			content: "FRONT";
+			color: rgba(255, 255, 255, 0.1);
+			font-weight: bold;
+			font-size: 1.5rem;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			height: 100%;
+			transform: rotate(180deg);
+		}
+
+		.back {
+			background: var(--face-back);
+			transform: rotateY(180deg);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			color: #334155;
+			font-weight: bold;
+		}
+
+		.back::after {
+			content: "BACK";
+			font-size: 1.5rem;
+			opacity: 0.5;
+			transform: rotate(180deg);
+		}
+
+		/* Sun Viz */
+		.sun-path {
+			position: absolute;
+			top: 0;
+			left: 0;
+			transform-style: preserve-3d;
+			pointer-events: none;
+		}
+
+		.sun-dot {
+			position: absolute;
+			border-radius: 50%;
+			background: var(--accent);
+			opacity: 0.6;
+			transform-style: preserve-3d;
+		}
+
+		.sun-dot.quarter {
+			width: 3px;
+			height: 3px;
+			opacity: 0.3;
+		}
+
+		.sun-dot.hour {
+			width: 6px;
+			height: 6px;
+			box-shadow: 0 0 6px var(--accent);
+		}
+
+		.sun-label {
+			position: absolute;
+			color: #94a3b8;
+			font-size: 0.7rem;
+			font-weight: bold;
+			transform: translate(-50%, -150%);
+			white-space: nowrap;
+			pointer-events: none;
+		}
+
+		.sun-terminator {
+			position: absolute;
+			width: 8px;
+			height: 8px;
+			background: #fff;
+			border-radius: 50%;
+			box-shadow: 0 0 10px #fff;
+			transform-style: preserve-3d;
+		}
+
+		.sun-term-label {
+			position: absolute;
+			color: #fff;
+			font-size: 0.75rem;
+			font-weight: bold;
+			transform: translate(-50%, 12px);
+			white-space: nowrap;
+			text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+		}
+
+		.sun-real {
+			position: absolute;
+			width: 30px;
+			height: 30px;
+			background: var(--accent);
+			border-radius: 50%;
+			box-shadow: 0 0 40px var(--accent);
+			transform-style: preserve-3d;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		/* HUD (Floating) */
+		.hud {
+			position: absolute;
+			bottom: 20px;
+			left: 20px;
+			background: rgba(15, 23, 42, 0.9);
+			padding: 15px;
+			border-radius: 8px;
+			border: 1px solid var(--border);
+			display: flex;
+			gap: 15px;
+			backdrop-filter: blur(5px);
+		}
+
+		/* RESULTS (RIGHT) */
+		.results {
+			width: 340px;
+			background: var(--panel);
+			border-left: 1px solid var(--border);
+			padding: 20px;
+			display: flex;
+			flex-direction: column;
+			gap: 20px;
+			overflow-y: auto;
+			z-index: 2;
+		}
+
+		.stat-card {
+			background: #0f172a;
+			border: 1px solid var(--border);
+			padding: 15px;
+			border-radius: 8px;
+			text-align: center;
+		}
+
+		.big-stat {
+			font-size: 2.5rem;
+			font-weight: 800;
+			color: var(--accent);
+			line-height: 1;
+		}
+
+		.sub-stat {
+			color: #64748b;
+			font-size: 0.8rem;
+			margin-top: 5px;
+		}
+
+		.chart-box {
+			height: 200px;
+			background: #0f172a;
+			border: 1px solid var(--border);
+			border-radius: 8px;
+			padding: 10px;
+		}
+
+		canvas {
+			width: 100%;
+			height: 100%;
+		}
+
+		/* Power Stats Grid */
+		.power-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 10px;
+		}
+
+		.p-box {
+			background: #0f172a;
+			border: 1px solid var(--border);
+			padding: 10px;
+			border-radius: 6px;
+		}
+
+		.p-head {
+			color: #94a3b8;
+			font-size: 0.75rem;
+			text-transform: uppercase;
+			margin-bottom: 5px;
+		}
+
+		.p-val {
+			color: var(--text);
+			font-weight: bold;
+			font-size: 1.1rem;
+		}
+
+		.unit {
+			font-size: 0.75rem;
+			color: #64748b;
+			font-weight: normal;
+			margin-left: 2px;
+		}
+
+		button {
+			background: var(--accent);
+			color: #000;
+			border: none;
+			padding: 12px;
+			border-radius: 6px;
+			font-weight: bold;
+			cursor: pointer;
+			width: 100%;
+		}
+
+		button:hover {
+			filter: brightness(1.1);
+		}
+
+		.btn-sec {
+			background: transparent;
+			border: 1px solid var(--accent);
+			color: var(--accent);
+		}
+
+		.btn-sec:hover {
+			background: var(--accent-dim);
+		}
+
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			font-size: 0.85rem;
+		}
+
+		th {
+			text-align: left;
+			color: #64748b;
+			padding: 8px 4px;
+			border-bottom: 1px solid var(--border);
+		}
+
+		td {
+			padding: 8px 4px;
+			border-bottom: 1px solid #1e293b;
+		}
+
+		.del {
+			color: var(--danger);
+			cursor: pointer;
+			font-weight: bold;
+			font-size: 1.2rem;
+			text-align: right;
+		}
+
+		.comparison-section table td {
+			padding: 8px 5px;
+		}
+
+		.comparison-section table tr:hover {
+			background: rgba(255, 255, 255, 0.03);
+		}
+
+		@media (max-width: 900px) {
+			.main {
+				flex-direction: column;
+				overflow-y: auto;
+			}
+
+			.viewport {
+				min-height: 400px;
+			}
+
+			.sidebar,
+			.results {
+				width: 100%;
+				height: auto;
+				border: none;
+			}
+		}
+
+		/* MAP MODAL */
+		.modal-overlay {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.8);
+			z-index: 100;
+			display: none;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.modal {
+			width: 90%;
+			max-width: 800px;
+			height: 80%;
+			background: #0f172a;
+			border: 1px solid var(--border);
+			border-radius: 8px;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+		}
+
+		.map-container {
+			flex: 1;
+			background: #333;
+		}
+
+		.modal-header {
+			padding: 10px 20px;
+			background: var(--panel);
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			border-bottom: 1px solid var(--border);
+		}
+
+		.close-btn {
+			cursor: pointer;
+			font-size: 1.5rem;
+			color: #94a3b8;
+		}
+
+		.copyright-bar {
+			position: fixed;
+			bottom: 0;
+			left: 0;
+			width: 100%;
+			background: rgba(15, 23, 42, 0.8);
+			backdrop-filter: blur(4px);
+			border-top: 1px solid var(--border);
+			color: #64748b;
+			font-size: 0.7rem;
+			text-align: center;
+			padding: 4px 0;
+			z-index: 1000;
+			pointer-events: none;
+			letter-spacing: 0.05em;
+		}
+	</style>
+</head>
+
+<body>
+	<header>
+		<h1>☀️ Solar Planner <span
+				style="font-size:0.7rem; background:#334155; padding:2px 6px; border-radius:4px; color:#94a3b8; margin-left:10px;">1.3</span>
+		</h1>
+		<a href="guide.html" target="_blank"
+			style="color:#94a3b8; text-decoration:none; font-size:0.8rem; border:1px solid var(--border); padding:4px 10px; border-radius:4px; font-weight:600; display:flex; align-items:center; gap:5px; transition: all 0.2s;">
+			❓ Help Guide
+		</a>
+	</header>
+
+	<div class="main">
+		<div class="sidebar">
+			<div class="group">
+				<label>Month <span class="val" id="monthVal">June</span></label>
+				<input type="range" id="doy" min="0" max="364" value="172">
+			</div>
+			<div class="group">
+				<label>Latitude <span class="val" id="latVal">52°</span></label>
+				<div class="row">
+					<input type="range" id="latS" min="-60" max="60" value="52" step="0.1">
+					<input type="number" id="latI" value="52" step="0.1">
+				</div>
+				<button class="btn-sec" id="mapBtn" style="margin-top:5px; padding:6px; font-size:0.8rem;">📍 Pick on
+					Map</button>
+				<div id="locName"
+					style="font-size:0.8rem; color:var(--text); margin-top:5px; font-weight:bold; height:1.2rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+				</div>
+			</div>
+
+			<div class="group">
+				<label>Longitude <span class="val" id="lonVal">0°</span></label>
+				<div class="row">
+					<input type="range" id="lonS" min="-180" max="180" value="0" step="0.1">
+					<input type="number" id="lonI" value="0" step="0.1">
+				</div>
+				<div class="row" style="margin-top:5px;">
+					<label style="flex:1; text-transform:none;">UTC Offset</label>
+					<input type="number" id="utcI" value="0" step="0.5" style="width:50px">
+				</div>
+				<div class="row" style="margin-top:5px;">
+					<label style="flex:1; text-transform:none; color:var(--text); cursor:pointer">
+						<input type="checkbox" id="useClock" style="width:auto;" checked> Use Clock Time
+					</label>
+				</div>
+			</div>
+
+			<hr style="width:100%; border:0; border-top:1px solid var(--border)">
+			<div class="group">
+				<label>Shadow (Obstacles)</label>
+				<p style="font-size:0.8rem; color:#64748b; margin:0;">
+					Drag range where sun is blocked.
+				</p>
+				<div style="margin-top:10px">
+					<label>From: <span class="val" id="sFromVal">None</span></label>
+					<input type="range" id="sFrom" min="4" max="22" step="0.5" value="4">
+				</div>
+				<div style="margin-top:10px">
+					<label>To: <span class="val" id="sToVal">None</span></label>
+					<input type="range" id="sTo" min="4" max="22" step="0.5" value="4">
+				</div>
+			</div>
+		</div>
+
+		<div class="viewport" id="viewport">
+			<div class="world">
+				<div class="floor">
+					<div class="dir n">N</div>
+					<div class="dir e">E</div>
+					<div class="dir s">S</div>
+					<div class="dir w">W</div>
+				</div>
+				<div class="sun-path" id="sunPath"></div>
+				<div class="sun-path" id="currentSun">
+					<div class="sun-real"></div>
+				</div>
+				<div class="rig" id="rig">
+					<div class="panel-obj" id="panel">
+						<div class="face front"></div>
+						<div class="face back"></div>
+					</div>
+				</div>
+			</div>
+			<div class="hud">
+				<div class="group">
+					<label>Azimuth</label>
+					<div class="row"><input type="number" id="azI" value="180"></div>
+				</div>
+				<div class="group">
+					<label>Tilt</label>
+					<div class="row"><input type="number" id="tiltI" value="30" min="0" max="90"></div>
+				</div>
+			</div>
+		</div>
+
+		<div class="results">
+			<div class="stat-card">
+				<div class="sub-stat">Efficiency Score</div>
+				<div class="big-stat"><span id="eff">0</span>%</div>
+				<div class="sub-stat" style="margin-top:5px">vs. Perfect Unshaded Day</div>
+			</div>
+
+			<button class="btn-sec" id="optBtn">✨ Auto-Optimize Angle</button>
+
+
+
+			<div class="chart-box">
+				<canvas id="chart"></canvas>
+			</div>
+
+			<hr style="width:100%; border:0; border-top:1px solid var(--border)">
+
+			<div class="group">
+				<label>Nominal Power (Watts)</label>
+				<div class="row">
+					<input type="number" id="watts" value="400" style="width:100%; text-align:left; padding-left:10px;">
+				</div>
+			</div>
+
+			<div class="power-grid">
+				<div class="p-box">
+					<div class="p-head" id="headToday">Today (Real)</div>
+					<div class="p-val" id="pToday">0 <span class="unit">Wh</span></div>
+				</div>
+				<div class="p-box">
+					<div class="p-head" id="headDay">Selected Day</div>
+					<div class="p-val" id="pDay">0 <span class="unit">Wh</span></div>
+				</div>
+				<div class="p-box">
+					<div class="p-head">Month Total</div>
+					<div class="p-val" id="pMonth">0 <span class="unit">kWh</span></div>
+				</div>
+				<div class="p-box">
+					<div class="p-head">Year Total</div>
+					<div class="p-val" id="pYear">0 <span class="unit">kWh</span></div>
+				</div>
+			</div>
+
+			<button id="saveBtn">Save Configuration</button>
+
+			<div class="comparison-section"
+				style="margin-top:10px; border-top:1px solid var(--border); padding-top:10px;">
+				<h4
+					style="color:#94a3b8; margin:0 0 10px 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;">
+					Saved Configurations</h4>
+				<table id="list" style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+					<thead>
+						<tr
+							style="text-align: left; color: #64748b; border-bottom: 1px solid var(--border); font-size: 0.7rem;">
+							<th style="padding: 5px; width: 45%;">Config</th>
+							<th style="padding: 5px; width: 18%;">Ideal (Year)</th>
+							<th style="padding: 5px; width: 18%;">Real (Year)</th>
+							<th style="padding: 5px; width: 10%;">%</th>
+							<th style="padding: 5px; width: 9%;"></th>
+						</tr>
+					</thead>
+					<tbody style="font-size: 0.8rem;"></tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal-overlay" id="mapModal">
+		<div class="modal">
+			<div class="modal-header">
+				<h3>Select Location</h3>
+				<div class="close-btn" id="closeMap">×</div>
+			</div>
+			<div id="map" class="map-container"></div>
+			<div style="padding:10px; font-size:0.8rem; color:#94a3b8; text-align:center;">
+				Click to select. Latitude & Longitude will be updated. Timezone auto-detected.
+			</div>
+		</div>
+	</div>
+	<!-- Optimization Modal -->
+	<div class="modal-overlay" id="optModalOverlay" style="display:none;">
+		<div class="modal" id="optModal" style="max-width:400px; height:auto; display:block;">
+			<div class="modal-content" style="padding:25px;">
+				<h3 style="margin-top:0; color:var(--accent);">Auto-Optimize Orientation</h3>
+				<p style="font-size:0.9rem; color:#94a3b8; margin-bottom:20px;">Choose a target range for the best
+					balanced angles.</p>
+
+				<div class="group" style="margin-bottom:15px;">
+					<label style="font-size: 0.7rem; margin-bottom: 8px; display: block;">Range Mode</label>
+					<select id="optRangeMode"
+						style="width:100%; background: #0f172a; border: 1px solid var(--border); color: white; padding:10px; border-radius:6px; font-size: 0.9rem; font-weight:bold;">
+						<option value="day">Selected Day</option>
+						<option value="period">Custom Period</option>
+						<option value="year">Full Year</option>
+					</select>
+				</div>
+
+				<div id="optMonthsRow" class="row"
+					style="display:none; margin-bottom: 20px; gap:10px; align-items:center;">
+					<div style="flex:1">
+						<label style="font-size: 0.65rem; color:#64748b; display:block; margin-bottom:4px;">From</label>
+						<select id="optFrom"
+							style="width:100%; background: #0f172a; border: 1px solid var(--border); color: white; padding:8px; border-radius:6px; font-size: 0.85rem;">
+							<option value="0">Jan</option>
+							<option value="1">Feb</option>
+							<option value="2">Mar</option>
+							<option value="3" selected>Apr</option>
+							<option value="4">May</option>
+							<option value="5">Jun</option>
+							<option value="6">Jul</option>
+							<option value="7">Aug</option>
+							<option value="8">Sep</option>
+							<option value="9">Oct</option>
+							<option value="10">Nov</option>
+							<option value="11">Dec</option>
+						</select>
+					</div>
+					<div style="flex:1">
+						<label style="font-size: 0.65rem; color:#64748b; display:block; margin-bottom:4px;">To</label>
+						<select id="optTo"
+							style="width:100%; background: #0f172a; border: 1px solid var(--border); color: white; padding:8px; border-radius:6px; font-size: 0.85rem;">
+							<option value="0">Jan</option>
+							<option value="1">Feb</option>
+							<option value="2">Mar</option>
+							<option value="3">Apr</option>
+							<option value="4">May</option>
+							<option value="5">Jun</option>
+							<option value="6">Jul</option>
+							<option value="7">Aug</option>
+							<option value="8">Sep</option>
+							<option value="9" selected>Oct</option>
+							<option value="10">Nov</option>
+							<option value="11">Dec</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="row" style="justify-content:flex-end; gap:10px; margin-top:10px;">
+					<button class="btn-sec" id="cancelOpt"
+						style="margin:0; background:transparent; border:none; color:#94a3b8;">Cancel</button>
+					<button class="btn-sec" id="runOpt" style="margin:0; padding:10px 20px;">Optimize Now</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Save Modal -->
+	<div class="modal-overlay" id="saveModalOverlay" style="display:none;">
+		<div class="modal" id="saveModal" style="max-width:400px; height:auto; display:block;">
+			<div class="modal-content" style="padding:25px;">
+				<h3 style="margin-top:0; color:var(--accent);">Save Configuration</h3>
+				<p style="font-size:0.9rem; color:#94a3b8;">Give this setup a name to find it later in the comparison
+					table.
+				</p>
+				<input type="text" id="saveName" placeholder="e.g. Roof - South East"
+					style="width:100%; box-sizing:border-box; background:#0f172a; border:1px solid var(--border); color:white; padding:10px; border-radius:6px; font-weight:bold; margin-bottom:20px;">
+				<div class="row" style="justify-content:flex-end; gap:10px;">
+					<button class="btn-sec" id="cancelSave"
+						style="margin:0; background:transparent; border:none; color:#94a3b8;">Cancel</button>
+					<button class="btn-sec" id="confirmSave" style="margin:0; padding:10px 20px;">Save
+						Configuration</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="math.js"></script>
+	<script>
+		// --- APP STATE ---
+
+		const state = {
+			doy: 172,
+			lat: 52,
+			lon: 0,
+			utcOffset: 0,
+			useClock: true,
+			az: 180,
+			tilt: 30,
+			sFrom: 4, sTo: 4,
+			watts: 400,
+			saved: [],
+			weatherData: null,  // Will hold cloud cover data
+			lastWeatherLocation: null, // Track last significant move (0.5 deg) for weather
+			lastGeoLocation: null // Track last move (0.001 deg) for geocoding
+		};
+
+		const els = {
+			doy: document.getElementById('doy'),
+			latS: document.getElementById('latS'), latI: document.getElementById('latI'),
+			lonS: document.getElementById('lonS'),
+			lonI: document.getElementById('lonI'),
+			latVal: document.getElementById('latVal'),
+			lonVal: document.getElementById('lonVal'),
+			utcI: document.getElementById('utcI'),
+			locName: document.getElementById('locName'),
+			useClock: document.getElementById('useClock'),
+			mapBtn: document.getElementById('mapBtn'),
+			mapModal: document.getElementById('mapModal'), closeMap: document.getElementById('closeMap'),
+			azI: document.getElementById('azI'), tiltI: document.getElementById('tiltI'),
+			sFrom: document.getElementById('sFrom'), sTo: document.getElementById('sTo'),
+			watts: document.getElementById('watts'),
+			viewport: document.getElementById('viewport'),
+			rig: document.getElementById('rig'), panel: document.getElementById('panel'),
+			path: document.getElementById('sunPath'), curSun: document.getElementById('currentSun'),
+			chart: document.getElementById('chart'), eff: document.getElementById('eff'),
+			pToday: document.getElementById('pToday'), pDay: document.getElementById('pDay'),
+			pMonth: document.getElementById('pMonth'), pYear: document.getElementById('pYear'),
+			headToday: document.getElementById('headToday'),
+			headDay: document.getElementById('headDay'),
+			optRangeMode: document.getElementById('optRangeMode'),
+			optFrom: document.getElementById('optFrom'),
+			optTo: document.getElementById('optTo'),
+			optModalOverlay: document.getElementById('optModalOverlay'),
+			runOpt: document.getElementById('runOpt'),
+			cancelOpt: document.getElementById('cancelOpt'),
+			optMonthsRow: document.getElementById('optMonthsRow'),
+			saveModalOverlay: document.getElementById('saveModalOverlay'),
+			saveModal: document.getElementById('saveModal'),
+			saveName: document.getElementById('saveName'),
+			confirmSave: document.getElementById('confirmSave'),
+			cancelSave: document.getElementById('cancelSave'),
+			optBtn: document.getElementById('optBtn'),
+			monthVal: document.getElementById('monthVal'),
+			sFromVal: document.getElementById('sFromVal'),
+			sToVal: document.getElementById('sToVal'),
+			saveBtn: document.getElementById('saveBtn')
+		};
+
+		// --- RENDERERS ---
+
+		function formatTime(h) {
+			const hh = Math.floor(h);
+			let mm = Math.round((h - hh) * 60);
+			if (mm === 60) { return `${hh + 1}:00`; }
+			return `${hh}:${mm.toString().padStart(2, '0')}`;
+		}
+
+		function getDisplayTime(solarH) {
+			if (!state.useClock) return solarH;
+			// Clock = Solar - Shift
+			// But wait, the previous math said: Clock = Solar - (EOT + 4(Lon-Std))
+			// We want to convert Solar Hour `h` (which drives position) to a Clock label.
+			const shift = getTimeCorrection(state.doy, state.lon, state.utcOffset);
+			// So if Solar is 12:00, Clock is 12:00 + Shift
+			let t = solarH + shift;
+			if (t < 0) t += 24;
+			if (t >= 24) t -= 24;
+			return t;
+		}
+
+		function render3D() {
+			els.rig.style.transform = `rotateZ(${state.az}deg)`;
+			els.panel.style.transform = `rotateX(${state.tilt}deg)`;
+			els.path.innerHTML = '';
+			const radius = 300;
+
+			const dec = getDeclination(state.doy);
+			let cosHA = -Math.tan(d2r(state.lat)) * Math.tan(d2r(dec));
+			if (cosHA < -1) cosHA = -1; if (cosHA > 1) cosHA = 1;
+			const halfDayHours = r2d(Math.acos(cosHA)) / 15;
+			const sunrise = 12 - halfDayHours;
+			const sunset = 12 + halfDayHours;
+
+			const createDot = (h, type, text = "") => {
+				const sun = getSolarPos(state.lat, state.doy, h);
+				const v = getVector(sun.az, sun.el);
+				const cx = v.x * radius;
+				const cy = -v.y * radius;
+				const cz = v.z * radius;
+				const dot = document.createElement('div');
+
+				if (type === 'term') {
+					dot.className = 'sun-terminator';
+					dot.innerHTML = `<div class="sun-term-label">${text}</div>`;
+				} else if (type === 'hour') {
+					dot.className = 'sun-dot hour';
+					dot.innerHTML = `<div class="sun-label">${text}</div>`;
+				} else {
+					dot.className = 'sun-dot quarter';
+				}
+				dot.style.transform = `translate3d(${cx}px, ${cy}px, ${cz}px) rotateX(-60deg)`;
+				els.path.appendChild(dot);
+			};
+
+			createDot(sunrise, 'term', formatTime(getDisplayTime(sunrise)));
+			const start = Math.ceil(sunrise * 4) / 4;
+			const end = Math.floor(sunset * 4) / 4;
+			for (let h = start; h <= end; h += 0.25) {
+				if (Math.abs(h - Math.round(h)) < 0.01) createDot(h, 'hour', Math.round(getDisplayTime(h)) + ":00");
+				else createDot(h, 'quarter');
+			}
+			createDot(sunset, 'term', formatTime(getDisplayTime(sunset)));
+
+			const sNow = getSolarPos(state.lat, state.doy, 13);
+			const vNow = getVector(sNow.az, sNow.el);
+			els.curSun.style.transform = `translate3d(${vNow.x * radius}px, ${-vNow.y * radius}px, ${vNow.z * radius}px) rotateX(-60deg)`;
+		}
+
+		function renderChart() {
+			// Get cloud cover for current day
+			const cloudData = state.weatherData && state.weatherData[state.doy] ? state.weatherData[state.doy] : null;
+
+			const result = calculateWeatherAdjustedPotential(
+				state.lat, state.doy, state.az, state.tilt, state.sFrom, state.sTo, cloudData
+			);
+
+			const { curve, eff, energyFactor, realEnergyFactor } = result;
+
+			els.eff.innerText = eff.toFixed(1);
+
+			// --- Calculate Power Stats ---
+
+			// Helper to format date (e.g. "Jun 21")
+			const fmtDate = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+			const now = new Date();
+
+			// 1. Selected Day
+			const dayWh = energyFactor * state.watts;
+			const realDayWh = realEnergyFactor * state.watts;
+			els.pDay.innerHTML = `<span style="color:#fbbf24">${Math.round(dayWh)}</span> <span class="unit">Wh</span> <br> <small style="color:#94a3b8">Real: <span style="color:#38bdf8">${Math.round(realDayWh)}</span> Wh</small>`;
+
+			const selDate = new Date(now.getFullYear(), 0, 1 + state.doy);
+			els.headDay.innerText = fmtDate(selDate) + " (selected)";
+
+			// 2. Today (Current Date)
+			const start = new Date(now.getFullYear(), 0, 0);
+			const diff = now - start;
+			const oneDay = 1000 * 60 * 60 * 24;
+			const todayDoy = Math.floor(diff / oneDay) - 1;
+
+			const todayCloudData = state.weatherData && state.weatherData[todayDoy] ? state.weatherData[todayDoy] : null;
+			const todayRes = calculateWeatherAdjustedPotential(state.lat, todayDoy, state.az, state.tilt, state.sFrom, state.sTo, todayCloudData);
+
+			const todayWh = todayRes.energyFactor * state.watts;
+			const realTodayWh = todayRes.realEnergyFactor * state.watts;
+			els.pToday.innerHTML = `<span style="color:#fbbf24">${Math.round(todayWh)}</span> <span class="unit">Wh</span> <br> <small style="color:#94a3b8">Real: <span style="color:#38bdf8">${Math.round(realTodayWh)}</span> Wh</small>`;
+
+			els.headToday.innerText = fmtDate(now) + " (today)";
+
+			// 3. Month & Year Aggregates
+			const agg = calculateWeatherAdjustedAggregates(state.lat, state.az, state.tilt, state.sFrom, state.sTo, state.doy, state.weatherData);
+			const monthKWh = (agg.monthTotal * state.watts) / 1000;
+			const realMonthKWh = (agg.realMonthTotal * state.watts) / 1000;
+			const yearKWh = (agg.yearTotal * state.watts) / 1000;
+			const realYearKWh = (agg.realYearTotal * state.watts) / 1000;
+
+			els.pMonth.innerHTML = `<span style="color:#fbbf24">${monthKWh.toFixed(1)}</span> <span class="unit">kWh</span> <br> <small style="color:#94a3b8">Real: <span style="color:#38bdf8">${realMonthKWh.toFixed(1)}</span> kWh</small>`;
+			els.pYear.innerHTML = `<span style="color:#fbbf24">${yearKWh.toFixed(0)}</span> <span class="unit">kWh</span> <br> <small style="color:#94a3b8">Real: <span style="color:#38bdf8">${realYearKWh.toFixed(0)}</span> kWh</small>`;
+
+			// --- Draw Chart ---
+			const ctx = els.chart.getContext('2d');
+			const w = els.chart.width = els.chart.clientWidth;
+			const h = els.chart.height = els.chart.clientHeight;
+			const pLeft = 35; // increased for labels
+			const pBot = 20;
+
+			ctx.fillStyle = "#0f172a"; ctx.fillRect(0, 0, w, h);
+
+			// Grid & Y-Axis Labels
+			ctx.strokeStyle = "#334155";
+			ctx.fillStyle = "#64748b";
+			ctx.textAlign = "right";
+			ctx.textBaseline = "middle";
+			ctx.font = "10px sans-serif";
+
+			const steps = 4;
+			for (let i = 0; i <= steps; i++) {
+				const yNorm = i / steps; // 0, 0.25, 0.5...
+				const yPos = (h - pBot) - (yNorm * (h - pBot - 10)); // 10px padding top
+
+				// Grid Line
+				ctx.beginPath();
+				ctx.moveTo(pLeft, yPos);
+				ctx.lineTo(w, yPos);
+				ctx.stroke();
+
+				// Label
+				ctx.fillText(`${Math.round(yNorm * 100)}%`, pLeft - 5, yPos);
+			}
+
+			// X Axis Labels & Vertical Grid
+			ctx.textAlign = "center"; ctx.textBaseline = "top";
+			const mapX = hVal => pLeft + ((hVal - 4) / 18) * (w - pLeft);
+			const mapY = pVal => (h - pBot) - (pVal * (h - pBot - 10));
+
+			// Determine Shift for Grid Alignment
+			// Clock = Solar + Shift  =>  Solar = Clock - Shift
+			let shift = 0;
+			if (state.useClock) {
+				shift = getTimeCorrection(state.doy, state.lon, state.utcOffset);
+			}
+
+			// Iterate Clock Hours (integers)
+			// We want to cover the solar range [4, 22].
+			// Solar 4 => Clock 4+shift
+			// Solar 22 => Clock 22+shift
+			const startClock = Math.floor(4 + shift);
+			const endClock = Math.ceil(22 + shift);
+
+			for (let c = startClock; c <= endClock; c++) {
+				const solarH = c - shift;
+
+				// Only draw if within Visible Chart Range (Solar 4 to 22)
+				if (solarH < 4 || solarH > 22) continue;
+
+				const xPos = mapX(solarH);
+
+				// Vertical Grid Line
+				ctx.beginPath();
+				ctx.strokeStyle = "#1e293b"; // Darker grid line
+				ctx.lineWidth = 1;
+				ctx.moveTo(xPos, 0);
+				ctx.lineTo(xPos, h - pBot);
+				ctx.stroke();
+
+				// Label (Clock Hour, e.g. "13")
+				let displayH = c;
+				if (displayH < 0) displayH += 24;
+				if (displayH >= 24) displayH -= 24;
+
+				ctx.fillStyle = "#64748b";
+				if (Math.abs(solarH - 12) < 0.1) ctx.fillStyle = "#fbbf24"; // Highlight Noon? Maybe not needed, but cool. Removed for consistency. ctx.fillStyle = "#64748b";
+
+				// Show label every 2 hours to prevent crowding, or every hour if space permits?
+				// User asked for "vertical lines corresponding to hours".
+				// Let's show label for every hour but maybe skip if too crowded?
+				// For now, every hour labels as requested "hours only on my axe".
+				// Actually, simpler: Just show the integer.
+				ctx.fillText(displayH.toString(), xPos, h - pBot + 5);
+			}
+
+			// Plot Potential (Dashed)
+			ctx.beginPath();
+			ctx.strokeStyle = "#475569"; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+			let first = true;
+			curve.forEach(pt => {
+				const x = mapX(pt.h);
+				const y = mapY(pt.pPot);
+				if (first) { ctx.moveTo(x, y); first = false; }
+				else ctx.lineTo(x, y);
+			});
+			ctx.stroke();
+			ctx.setLineDash([]);
+
+			// Plot Actual (Yellow - Ideal)
+			ctx.beginPath();
+			ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 3;
+			first = true;
+			curve.forEach(pt => {
+				const x = mapX(pt.h);
+				const y = mapY(pt.p);
+				if (first) { ctx.moveTo(x, y); first = false; }
+				else ctx.lineTo(x, y);
+			});
+			ctx.stroke();
+
+			// Plot Real (Weather-Adjusted - Cyan/Blue dotted)
+			if (cloudData) {
+				ctx.beginPath();
+				ctx.strokeStyle = "#38bdf8"; ctx.lineWidth = 2; ctx.setLineDash([3, 3]);
+				first = true;
+				curve.forEach(pt => {
+					const x = mapX(pt.h);
+					const hourIndex = Math.floor(pt.h);
+					const cloudCover = cloudData[hourIndex] || 0;
+					const cloudFactor = 1 - (cloudCover / 100) * 0.8;
+					const realP = pt.p * cloudFactor;
+					const y = mapY(realP);
+					if (first) { ctx.moveTo(x, y); first = false; }
+					else ctx.lineTo(x, y);
+				});
+				ctx.stroke();
+				ctx.setLineDash([]);
+			}
+
+			// Shadow Overlay
+			if (state.sFrom < state.sTo) {
+				const sx = mapX(state.sFrom);
+				const ex = mapX(state.sTo);
+				ctx.fillStyle = "rgba(239, 68, 68, 0.2)";
+				ctx.fillRect(sx, 10, ex - sx, h - pBot - 10);
+				ctx.fillStyle = "#ef4444";
+				ctx.fillText("SHADOW", sx + (ex - sx) / 2, 20);
+			}
+		}
+
+		// --- CONTROLLER EVENTS ---
+
+		function sync() {
+			state.az = (state.az + 360) % 360;
+			if (state.tilt < 0) state.tilt = 0; if (state.tilt > 90) state.tilt = 90;
+
+			if (document.activeElement !== els.azI) els.azI.value = Math.round(state.az);
+			if (document.activeElement !== els.tiltI) els.tiltI.value = Math.round(state.tilt);
+			if (document.activeElement !== els.latI) els.latI.value = state.lat.toFixed(1);
+			if (document.activeElement !== els.lonI) els.lonI.value = state.lon.toFixed(1);
+			if (document.activeElement !== els.utcI) els.utcI.value = state.utcOffset;
+
+			els.latVal.innerText = state.lat + "°";
+			const date = new Date(2023, 0, 1 + state.doy);
+			els.monthVal.innerText = date.toLocaleDateString('en-US', { month: 'long' });
+
+			const fmt = t => `${Math.floor(t)}:${(t % 1) * 60 == 0 ? '00' : '30'}`;
+
+			els.sFromVal.innerText = state.sFrom < state.sTo ? fmt(state.sFrom) : "None";
+			els.sToVal.innerText = state.sFrom < state.sTo ? fmt(state.sTo) : "None";
+
+			render3D();
+			renderChart();
+		}
+
+		const read = async () => {
+			state.doy = parseInt(els.doy.value);
+			// Lat
+			let lat = parseFloat(els.latI.value);
+			if (isNaN(lat)) lat = 0;
+			const oldLat = state.lat;
+			state.lat = lat;
+			if (document.activeElement !== els.latS) els.latS.value = lat;
+			els.latVal.innerText = lat.toFixed(1) + "°";
+
+			// Lon
+			let lon = parseFloat(els.lonI.value);
+			if (isNaN(lon)) lon = 0;
+			const oldLon = state.lon;
+			state.lon = lon;
+			if (document.activeElement !== els.lonS) els.lonS.value = lon;
+			els.lonVal.innerText = lon.toFixed(1) + "°";
+			state.utcOffset = parseFloat(els.utcI.value);
+			state.useClock = els.useClock.checked;
+			state.az = parseFloat(els.azI.value);
+			state.tilt = parseFloat(els.tiltI.value);
+			state.sFrom = parseFloat(els.sFrom.value);
+			state.sTo = parseFloat(els.sTo.value);
+			state.watts = parseInt(els.watts.value) || 0;
+
+			// 1. Check if weather needs re-fetch (> 0.5 deg)
+			const weatherThreshold = 0.5;
+			const needsWeather = !state.lastWeatherLocation ||
+				Math.abs(lat - state.lastWeatherLocation.lat) > weatherThreshold ||
+				Math.abs(lon - state.lastWeatherLocation.lon) > weatherThreshold;
+
+			if (needsWeather) {
+				state.lastWeatherLocation = { lat, lon };
+				fetchHistoricalWeather(lat, lon).then(data => {
+					state.weatherData = data;
+					sync();
+				});
+			}
+
+			// 2. Check if geocoding needs re-fetch (> 0.001 deg)
+			const geoThreshold = 0.001;
+			const needsGeo = !state.lastGeoLocation ||
+				Math.abs(lat - state.lastGeoLocation.lat) > geoThreshold ||
+				Math.abs(lon - state.lastGeoLocation.lon) > geoThreshold;
+
+			if (needsGeo) {
+				els.locName.innerText = "Loading...";
+				state.lastGeoLocation = { lat, lon };
+				fetchLocationName(lat, lon).then(loc => {
+					els.locName.innerText = `${loc.city}, ${loc.country}`;
+					sync();
+				}).catch(() => {
+					els.locName.innerText = `${lat.toFixed(2)}N, ${lon.toFixed(2)}E`;
+				});
+			}
+
+			// 3. Check if timezone needs update (significant movement)
+			if (needsWeather) {
+				try {
+					const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
+					fetch(url).then(r => r.json()).then(data => {
+						if (data.utc_offset_seconds !== undefined) {
+							state.utcOffset = data.utc_offset_seconds / 3600;
+							els.utcI.value = state.utcOffset;
+							sync();
+						}
+					});
+				} catch (err) { }
+			}
+
+			sync(); // Immediate update (ideal calculation)
+		};
+
+		[els.doy, els.latS, els.latI, els.lonI, els.utcI, els.useClock, els.watts,
+		els.optRangeMode, els.optFrom, els.optTo
+		].forEach(e => {
+			if (e) e.addEventListener('input', read);
+		});
+
+		// Specialized tilt listener with clamping
+		const onTiltInput = () => {
+			let t = parseFloat(els.tiltI.value);
+			if (isNaN(t)) t = 0;
+			if (t < 0) t = 0;
+			if (t > 90) t = 90;
+			state.tilt = t;
+			if (document.activeElement === els.tiltI) {
+				// Don't overwrite while typing, but sync state
+			} else {
+				els.tiltI.value = t;
+			}
+			sync();
+		};
+		els.tiltI.addEventListener('input', onTiltInput);
+		els.tiltI.addEventListener('blur', () => {
+			els.tiltI.value = state.tilt; // Final clamp on blur
+		});
+
+		els.azI.addEventListener('input', read);
+
+		els.sFrom.addEventListener('input', () => {
+			if (parseFloat(els.sFrom.value) > parseFloat(els.sTo.value)) els.sTo.value = els.sFrom.value;
+			read();
+		});
+		els.latS.addEventListener('input', () => {
+			els.latI.value = els.latS.value;
+			read();
+		});
+
+		els.lonS.addEventListener('input', () => {
+			els.lonI.value = els.lonS.value;
+			read();
+		});
+		els.sTo.addEventListener('input', () => {
+			if (parseFloat(els.sTo.value) < parseFloat(els.sFrom.value)) els.sFrom.value = els.sTo.value;
+			read();
+		});
+
+		let dragging = false, lx = 0, ly = 0;
+		els.viewport.addEventListener('mousedown', e => { dragging = true; lx = e.clientX; ly = e.clientY; });
+		window.addEventListener('mousemove', e => {
+			if (!dragging) return;
+			state.az += (e.clientX - lx) * 0.5;
+			state.tilt += (e.clientY - ly) * 0.5;
+			lx = e.clientX; ly = e.clientY;
+			sync();
+		});
+		window.addEventListener('mouseup', () => dragging = false);
+
+		els.optRangeMode.addEventListener('change', (e) => {
+			els.optMonthsRow.style.display = (e.target.value === 'period') ? 'flex' : 'none';
+		});
+
+		els.optBtn.addEventListener('click', () => {
+			els.optModalOverlay.style.display = 'flex';
+		});
+
+		els.runOpt.addEventListener('click', () => {
+			const mode = els.optRangeMode.value;
+			let best;
+			if (mode === 'day') {
+				best = findOptimalOrientation(state.lat, state.doy, state.sFrom, state.sTo);
+			} else if (mode === 'period') {
+				const from = parseInt(els.optFrom.value);
+				const to = parseInt(els.optTo.value);
+				best = findOptimalOrientationForRange(state.lat, from, to, state.sFrom, state.sTo);
+			} else {
+				// Year
+				best = findOptimalOrientationForRange(state.lat, 0, 11, state.sFrom, state.sTo);
+			}
+			state.az = best.az;
+			state.tilt = best.tilt;
+			els.optModalOverlay.style.display = 'none';
+			sync();
+		});
+
+		els.cancelOpt.addEventListener('click', () => {
+			els.optModalOverlay.style.display = 'none';
+		});
+
+		els.optModalOverlay.addEventListener('click', (e) => {
+			if (e.target === els.optModalOverlay) els.optModalOverlay.style.display = 'none';
+		});
+
+		const list = document.querySelector('#list tbody');
+
+		async function saveComparison() {
+			els.saveName.value = "Config " + (list.children.length + 1);
+			els.saveModalOverlay.style.display = 'flex';
+			els.saveName.focus();
+			els.saveName.select();
+		}
+
+		els.confirmSave.addEventListener('click', async () => {
+			const name = els.saveName.value.trim();
+			if (!name) return;
+
+			els.saveModalOverlay.style.display = 'none';
+
+			const locName = els.locName.innerText || "Unknown Location";
+			const eff = parseFloat(els.eff.innerText);
+
+			// Get current stats from UI (already calculated in renderChart)
+			const dayWh = els.pDay.innerHTML.split('<span')[0].trim();
+			const yearKWh = els.pYear.innerHTML.split('<span')[0].trim();
+			const realYearKWh = els.pYear.innerHTML.split('Real:')[1]?.split('kWh')[0].trim() || "0";
+
+			const entry = {
+				name,
+				location: locName,
+				lat: state.lat,
+				lon: state.lon,
+				az: state.az,
+				tilt: state.tilt,
+				watts: state.watts,
+				sFrom: state.sFrom,
+				sTo: state.sTo,
+				eff,
+				yearKWh,
+				realYearKWh,
+				utcOffset: state.utcOffset,
+				timestamp: Date.now()
+			};
+
+			if (!db) await initDB();
+			const tx = db.transaction("comparisons", "readwrite");
+			const store = tx.objectStore("comparisons");
+			const request = store.add(entry);
+
+			request.onsuccess = () => {
+				entry.id = request.result;
+				addRow(entry);
+			};
+		});
+
+		els.cancelSave.addEventListener('click', () => {
+			els.saveModalOverlay.style.display = 'none';
+		});
+
+		els.saveModalOverlay.addEventListener('click', (e) => {
+			if (e.target === els.saveModalOverlay) els.saveModalOverlay.style.display = 'none';
+		});
+
+		els.saveName.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				els.confirmSave.click();
+			}
+		});
+
+		window.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape') {
+				if (els.saveModalOverlay.style.display === 'flex') {
+					els.saveModalOverlay.style.display = 'none';
+				} else if (els.mapModal.style.display === 'flex') {
+					els.mapModal.style.display = 'none';
+				} else if (els.optModalOverlay.style.display === 'flex') {
+					els.optModalOverlay.style.display = 'none';
+				}
+			}
+			if (e.key === 'Enter') {
+				if (els.optModalOverlay.style.display === 'flex') {
+					e.preventDefault();
+					els.runOpt.click();
+				}
+			}
+		});
+
+		function addRow(entry) {
+			const row = `
+				<tr data-id="${entry.id}" onclick="applyConfig(${entry.id})" style="cursor:pointer">
+					<td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+						<div style="font-weight:bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${entry.name}">${entry.name}</div>
+						<div style="font-size:0.7rem; color:#94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${entry.location}</div>
+						<div style="font-size:0.7rem; color:#94a3b8">${Math.round(entry.az)}° / ${Math.round(entry.tilt)}°</div>
+					</td>
+					<td style="font-size:0.85rem; color:#fbbf24">
+						${entry.yearKWh}kWh
+					</td>
+					<td style="font-size:0.85rem; color:#38bdf8">
+						${entry.realYearKWh}kWh
+					</td>
+					<td style="color:#fbbf24; font-weight:bold">${entry.eff}%</td>
+					<td class="del" onclick="event.stopPropagation(); deleteComparison(${entry.id}, this)">×</td>
+				</tr>
+			`;
+			list.insertAdjacentHTML('afterbegin', row);
+		}
+
+		async function deleteComparison(id, el) {
+			if (!db) await initDB();
+			const tx = db.transaction("comparisons", "readwrite");
+			const store = tx.objectStore("comparisons");
+			store.delete(id);
+			el.parentElement.remove();
+		}
+
+		async function applyConfig(id) {
+			if (!db) await initDB();
+			const tx = db.transaction("comparisons", "readonly");
+			const store = tx.objectStore("comparisons");
+			const request = store.get(id);
+
+			request.onsuccess = () => {
+				const entry = request.result;
+				if (!entry) return;
+
+				els.azI.value = entry.az;
+				els.tiltI.value = entry.tilt;
+				els.latI.value = entry.lat;
+				els.lonI.value = entry.lon;
+				els.watts.value = entry.watts;
+				if (entry.sFrom !== undefined) els.sFrom.value = entry.sFrom;
+				if (entry.sTo !== undefined) els.sTo.value = entry.sTo;
+				if (entry.utcOffset !== undefined) {
+					els.utcI.value = entry.utcOffset;
+				}
+
+				// Trigger update
+				read();
+			};
+		}
+
+		async function loadComparisons() {
+			if (!db) await initDB();
+			const tx = db.transaction("comparisons", "readonly");
+			const store = tx.objectStore("comparisons");
+			const request = store.getAll();
+			request.onsuccess = () => {
+				list.innerHTML = "";
+				request.result.sort((a, b) => a.timestamp - b.timestamp).forEach(addRow);
+			};
+		}
+
+		els.saveBtn.addEventListener('click', saveComparison);
+
+		// Initialize DB and load comparisons on start
+		initDB().then(loadComparisons);
+
+		// --- MAP LOGIC ---
+
+		let map, marker;
+		const initMap = () => {
+			if (map) return;
+			// Default view
+			map = L.map('map').setView([state.lat, state.lon], 5);
+			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				attribution: '&copy; OpenStreetMap contributors'
+			}).addTo(map);
+
+			marker = L.marker([state.lat, state.lon]).addTo(map);
+
+			map.on('click', async e => {
+				const { lat, lng } = e.latlng;
+				marker.setLatLng([lat, lng]);
+
+				// Update Lat/Lon w/o triggering full read yet
+				els.latI.value = lat.toFixed(1);
+				els.latS.value = lat;
+				els.lonI.value = lng.toFixed(1);
+				els.lonS.value = lng;
+
+				// Fetch Timezone
+				try {
+					// Use Open-Meteo to get offset
+					const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&timezone=auto`;
+					const resp = await fetch(url);
+					const data = await resp.json();
+					if (data.utc_offset_seconds !== undefined) {
+						els.utcI.value = data.utc_offset_seconds / 3600;
+					}
+				} catch (err) {
+					// console.error("Timezone fetch error:", err);
+				}
+
+				// Apply changes
+				read();
+			});
+		};
+
+		els.mapBtn.addEventListener('click', () => {
+			els.mapModal.style.display = 'flex';
+			// Delay to ensure modal is visible for size calc
+			setTimeout(() => {
+				initMap();
+				map.invalidateSize();
+				// Center on current state
+				if (map) {
+					map.setView([state.lat, state.lon], 5);
+					marker.setLatLng([state.lat, state.lon]);
+				}
+			}, 50);
+		});
+
+		els.closeMap.addEventListener('click', () => {
+			els.mapModal.style.display = 'none';
+		});
+
+		sync();
+
+		// --- INDEXEDDB WRAPPER ---
+		let db = null;
+
+		async function initDB() {
+			return new Promise((resolve, reject) => {
+				const request = indexedDB.open("SolarPlannerDB", 1);
+
+				request.onerror = () => reject(request.error);
+				request.onsuccess = () => {
+					db = request.result;
+					resolve(db);
+				};
+
+				request.onupgradeneeded = (e) => {
+					const database = e.target.result;
+
+					// Weather cache store
+					if (!database.objectStoreNames.contains("weatherCache")) {
+						database.createObjectStore("weatherCache", { keyPath: "key" });
+					}
+
+					// Geocoding cache store
+					if (!database.objectStoreNames.contains("geocodeCache")) {
+						database.createObjectStore("geocodeCache", { keyPath: "key" });
+					}
+
+					// Comparisons store
+					if (!database.objectStoreNames.contains("comparisons")) {
+						database.createObjectStore("comparisons", { keyPath: "id", autoIncrement: true });
+					}
+				};
+			});
+		}
+
+		async function getWeatherCache(lat, lon) {
+			if (!db) await initDB();
+			const key = `${lat.toFixed(1)}_${lon.toFixed(1)}`;
+
+			return new Promise((resolve, reject) => {
+				const tx = db.transaction("weatherCache", "readonly");
+				const store = tx.objectStore("weatherCache");
+				const request = store.get(key);
+
+				request.onsuccess = () => {
+					const cached = request.result;
+					if (!cached) {
+						resolve(null);
+						return;
+					}
+
+					// Check if cache is from current year
+					const cachedYear = new Date(cached.timestamp).getFullYear();
+					const currentYear = new Date().getFullYear();
+
+					if (cachedYear === currentYear) {
+						resolve(cached.data);
+					} else {
+						// Stale cache (from previous year)
+						resolve(null);
+					}
+				};
+
+				request.onerror = () => reject(request.error);
+			});
+		}
+
+		async function setWeatherCache(lat, lon, data) {
+			if (!db) await initDB();
+			const key = `${lat.toFixed(1)}_${lon.toFixed(1)}`;
+
+			return new Promise((resolve, reject) => {
+				const tx = db.transaction("weatherCache", "readwrite");
+				const store = tx.objectStore("weatherCache");
+				const request = store.put({
+					key,
+					data,
+					timestamp: Date.now()
+				});
+
+				request.onsuccess = () => resolve();
+				request.onerror = () => reject(request.error);
+			});
+		}
+
+		async function getGeocodeCache(lat, lon) {
+			if (!db) await initDB();
+			const key = `${lat.toFixed(3)}_${lon.toFixed(3)}`;
+
+			return new Promise((resolve, reject) => {
+				const tx = db.transaction("geocodeCache", "readonly");
+				const store = tx.objectStore("geocodeCache");
+				const request = store.get(key);
+
+				request.onsuccess = () => {
+					const cached = request.result;
+					if (!cached) {
+						resolve(null);
+						return;
+					}
+
+					// Check if cache is < 24 hours old
+					const age = Date.now() - cached.timestamp;
+					if (age < 24 * 60 * 60 * 1000) {
+						resolve(cached.data);
+					} else {
+						resolve(null);
+					}
+				};
+
+				request.onerror = () => reject(request.error);
+			});
+		}
+
+		async function setGeocodeCache(lat, lon, data) {
+			if (!db) await initDB();
+			const key = `${lat.toFixed(3)}_${lon.toFixed(3)}`;
+
+			return new Promise((resolve, reject) => {
+				const tx = db.transaction("geocodeCache", "readwrite");
+				const store = tx.objectStore("geocodeCache");
+				const request = store.put({
+					key,
+					data,
+					timestamp: Date.now()
+				});
+
+				request.onsuccess = () => resolve();
+				request.onerror = () => reject(request.error);
+			});
+		}
+
+		// --- HISTORICAL WEATHER DATA ---
+		async function fetchHistoricalWeather(lat, lon) {
+			try {
+				// Check cache first
+				const cached = await getWeatherCache(lat, lon);
+				if (cached) {
+					console.log("Weather data loaded from cache");
+					return cached;
+				}
+
+				console.log("Fetching weather data from API...");
+
+				// Fetch last 3 years of cloud cover data for all days of the year
+				const currentYear = new Date().getFullYear();
+				const startDate = `${currentYear - 3}-01-01`;
+				const endDate = `${currentYear - 1}-12-31`;
+
+				const url = `https://archive-api.open-meteo.com/v1/archive?` +
+					`latitude=${lat}&longitude=${lon}&` +
+					`start_date=${startDate}&end_date=${endDate}&` +
+					`hourly=cloud_cover`;
+
+				const resp = await fetch(url);
+				if (!resp.ok) throw new Error("Weather API failed");
+				const data = await resp.json();
+
+				if (!data.hourly || !data.hourly.time || !data.hourly.cloud_cover) {
+					console.warn("No cloud cover data available");
+					return null;
+				}
+
+				// Process data: average cloud cover by day-of-year and hour
+				const weatherByDoy = {};
+
+				for (let i = 0; i < data.hourly.time.length; i++) {
+					const timestamp = data.hourly.time[i];
+					const cloudCover = data.hourly.cloud_cover[i];
+
+					if (cloudCover === null) continue;
+
+					const date = new Date(timestamp);
+					const start = new Date(date.getFullYear(), 0, 0);
+					const diff = date - start;
+					const oneDay = 1000 * 60 * 60 * 24;
+					const doy = Math.floor(diff / oneDay) - 1; // 0-indexed
+					const hour = date.getHours();
+
+					if (!weatherByDoy[doy]) {
+						weatherByDoy[doy] = Array(24).fill(null).map(() => []);
+					}
+
+					weatherByDoy[doy][hour].push(cloudCover);
+				}
+
+				// Average the values
+				const avgWeatherByDoy = {};
+				for (const doy in weatherByDoy) {
+					avgWeatherByDoy[doy] = [];
+					for (let h = 0; h < 24; h++) {
+						const values = weatherByDoy[doy][h];
+						if (values.length > 0) {
+							const avg = values.reduce((a, b) => a + b, 0) / values.length;
+							avgWeatherByDoy[doy][h] = avg;
+						} else {
+							avgWeatherByDoy[doy][h] = 0;
+						}
+					}
+				}
+
+				// Cache the result
+				await setWeatherCache(lat, lon, avgWeatherByDoy);
+				console.log("Weather data cached");
+
+				return avgWeatherByDoy;
+			} catch (e) {
+				console.warn("Could not fetch weather data:", e);
+				return null;
+			}
+		}
+
+		// --- REVERSE GEOCODING ---
+		async function fetchLocationName(lat, lon) {
+			try {
+				// Check cache first
+				const cached = await getGeocodeCache(lat, lon);
+				if (cached) {
+					console.log("Location loaded from cache");
+					return cached;
+				}
+
+				console.log("Fetching location name from Nominatim...");
+
+				// Rate limit: 1 req/sec for Nominatim
+				await new Promise(resolve => setTimeout(resolve, 1000));
+
+				const url = `https://nominatim.openstreetmap.org/reverse?` +
+					`lat=${lat}&lon=${lon}&format=json`;
+
+				const resp = await fetch(url, {
+					headers: {
+						'User-Agent': 'SolarPlanner/1.0'
+					}
+				});
+
+				if (!resp.ok) throw new Error("Geocoding failed");
+				const data = await resp.json();
+				const addr = data.address || {};
+
+				// Broaden search for location name
+				let name = addr.city || addr.town || addr.village || addr.hamlet ||
+					addr.suburb || addr.residential || addr.neighbourhood || addr.county;
+
+				// Fallback to display_name or parts of it if specific city fields missing
+				if (!name && data.display_name) {
+					const parts = data.display_name.split(",");
+					name = parts[0]; // Usually the most specific part (street, object, or neighborhood)
+				}
+
+				if (!name) name = "Unknown";
+				const country = addr.country || "Unknown";
+
+				const location = { city: name, country };
+
+				// Cache the result
+				await setGeocodeCache(lat, lon, location);
+				console.log("Location cached");
+
+				return location;
+			} catch (e) {
+				console.warn("Could not fetch location name:", e);
+				return { city: `${lat.toFixed(2)}N, ${lon.toFixed(2)}E`, country: "" };
+			}
+		}
+
+		// --- AUTO LOCATION ---
+		async function detectLocation() {
+			try {
+				// Using ip-api.com which supports CORS
+				const resp = await fetch('http://ip-api.com/json/?fields=lat,lon,offset');
+				if (!resp.ok) throw new Error("Blocked");
+				const data = await resp.json();
+
+				if (data.lat && data.lon) {
+					els.latI.value = data.lat.toFixed(1);
+					els.lonI.value = data.lon.toFixed(1);
+
+					// offset is in seconds from UTC
+					els.utcI.value = data.offset / 3600;
+				}
+
+				els.locName.innerText = "Loading...";
+				read(); // This will trigger both weather and geocoding fetches if state.last*Locations are null
+			} catch (e) {
+				// Fallback to Kyiv
+				console.log("Location fetch failed, using fallback (Kyiv).");
+				els.latI.value = "50.5";
+				els.lonI.value = "30.5";
+				els.utcI.value = "2";
+				els.locName.innerText = "Loading...";
+				read();
+			}
+		}
+
+		// Trigger detection
+		detectLocation();
+
+	</script>
+
+	<div class="copyright-bar">
+		Copyright © 2026 Taras Greben — solar.eTaras.com
+	</div>
+</body>
+
+</html>
