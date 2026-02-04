@@ -8,8 +8,52 @@
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","G-2S6C3Y8ENM");</script>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Google tag (gtag.js) -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-2S6C3Y8ENM"></script>
+	<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","G-2S6C3Y8ENM");</script>
+
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<!-- SEO & Metadata -->
+	<title>Solar Planner - PV Energy & Orientation Calculator</title>
+	<meta name="description" content="Free online solar energy calculator. Optimize your solar panel tilt and azimuth, simulate shadow losses, and estimate real-world energy production using historical weather data.">
+	<meta name="keywords" content="solar planner, pv calculator, solar panel orientation, azimuth, tilt, solar energy estimate, sun path, shadow analysis, weather adjusted solar">
+	<meta name="author" content="Taras Greben">
+	<link rel="canonical" href="https://solar.etaras.com/">
+
+	<!-- Open Graph / Social -->
+	<meta property="og:type" content="website">
+	<meta property="og:url" content="https://solar.etaras.com/">
+	<meta property="og:title" content="Solar Planner - PV Energy & Orientation Calculator">
+	<meta property="og:description" content="Simulate solar potential with real weather data. Optimize panel placement for maximum efficiency.">
+
+	<!-- Structured Data (JSON-LD) -->
+	<script type="application/ld+json">
+	{
+	  "@context": "https://schema.org",
+	  "@type": "WebApplication",
+	  "name": "Solar Planner",
+	  "url": "https://solar.etaras.com",
+	  "codeRepository": "https://github.com/dev-lab/solar-planner",
+	  "license": "https://github.com/dev-lab/solar-planner/blob/main/LICENSE",
+	  "description": "A professional tool to simulate solar panel energy generation. Features include 3D sun path visualization, shadow modeling, and weather-adjusted yield estimation.",
+	  "applicationCategory": "UtilitiesApplication",
+	  "operatingSystem": "Any",
+	  "author": {
+		"@type": "Person",
+		"name": "Taras Greben"
+	  },
+	  "offers": {
+		"@type": "Offer",
+		"price": "0",
+		"priceCurrency": "USD"
+	  }
+	}
+	</script>
+
 	<link rel="icon" href="favicon.ico">
-	<title>Solar Planner</title>
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 	<style>
@@ -64,7 +108,8 @@
 
 		/* CONTROLS (LEFT) */
 		.sidebar {
-			width: 300px;
+			flex: 0 1 300px;
+			min-width: 240px;
 			background: var(--panel);
 			border-right: 1px solid var(--border);
 			display: flex;
@@ -87,10 +132,12 @@
 			color: #94a3b8;
 			text-transform: uppercase;
 			letter-spacing: 0.5px;
+			display: flex;
+			justify-content: space-between;
+			align-items: baseline;
 		}
 
 		.val {
-			float: right;
 			color: var(--text);
 			font-weight: bold;
 		}
@@ -120,7 +167,8 @@
 
 		/* VIEWPORT (CENTER) */
 		.viewport {
-			flex: 1;
+			flex: 1 1 400px;
+			min-width: 320px;
 			position: relative;
 			background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
 			perspective: 1000px;
@@ -336,7 +384,8 @@
 
 		/* RESULTS (RIGHT) */
 		.results {
-			width: 340px;
+			flex: 0 1 340px;
+			min-width: 280px;
 			background: var(--panel);
 			border-left: 1px solid var(--border);
 			padding: 20px;
@@ -475,13 +524,27 @@
 		}
 
 		@media (max-width: 900px) {
-			.main {
-				flex-direction: column;
+			body {
+				height: auto;
 				overflow-y: auto;
 			}
 
+			header {
+				height: auto;
+				padding: 10px 15px;
+				flex-wrap: wrap;
+				gap: 10px;
+			}
+
+			.main {
+				flex-direction: column;
+				overflow: visible;
+			}
+
+			/* Make viewport touch-friendly and fit 3D scene */
 			.viewport {
-				min-height: 400px;
+				min-height: 450px;
+				overflow: hidden; /* clip the large compass floor */
 			}
 
 			.sidebar,
@@ -489,6 +552,21 @@
 				width: 100%;
 				height: auto;
 				border: none;
+				border-bottom: 1px solid var(--border);
+				box-sizing: border-box; /* prevent horizontal scroll */
+			}
+
+			/* Adjust HUD to not cover the panel on small screens */
+			.hud {
+				bottom: 10px;
+				left: 10px;
+				right: 10px;
+				padding: 10px;
+				justify-content: center;
+			}
+
+			.hud input {
+				width: 50px; /* smaller inputs */
 			}
 		}
 
@@ -560,12 +638,23 @@
 <body>
 	<header>
 		<h1>☀️ Solar Planner <span
-				style="font-size:0.7rem; background:#334155; padding:2px 6px; border-radius:4px; color:#94a3b8; margin-left:10px;">1.3</span>
+				style="font-size:0.7rem; background:#334155; padding:2px 6px; border-radius:4px; color:#94a3b8; margin-left:10px;">1.4</span>
 		</h1>
-		<a href="guide.html" target="_blank"
-			style="color:#94a3b8; text-decoration:none; font-size:0.8rem; border:1px solid var(--border); padding:4px 10px; border-radius:4px; font-weight:600; display:flex; align-items:center; gap:5px; transition: all 0.2s;">
-			❓ Help Guide
-		</a>
+		<div style="display:flex; gap:10px;">
+			<a href="https://github.com/dev-lab/solar-planner" target="_blank"
+				style="color:#94a3b8; text-decoration:none; font-size:0.8rem; border:1px solid var(--border); padding:4px 10px; border-radius:4px; font-weight:600; display:flex; align-items:center; gap:5px; transition: all 0.2s;"
+				onmouseover="this.style.borderColor='#fbbf24'; this.style.color='#f1f5f9'"
+				onmouseout="this.style.borderColor='#334155'; this.style.color='#94a3b8'">
+				<svg height="16" viewBox="0 0 16 16" width="16" style="fill:currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+				GitHub
+			</a>
+			<a href="guide.html" target="_blank"
+				style="color:#94a3b8; text-decoration:none; font-size:0.8rem; border:1px solid var(--border); padding:4px 10px; border-radius:4px; font-weight:600; display:flex; align-items:center; gap:5px; transition: all 0.2s;"
+				onmouseover="this.style.borderColor='#fbbf24'; this.style.color='#f1f5f9'"
+				onmouseout="this.style.borderColor='#334155'; this.style.color='#94a3b8'">
+				❓ Help Guide
+			</a>
+		</div>
 	</header>
 
 	<div class="main">
@@ -833,7 +922,7 @@
 			sFrom: 4, sTo: 4,
 			watts: 400,
 			saved: [],
-			weatherData: null,  // Will hold cloud cover data
+			weatherData: null,	// Will hold cloud cover data
 			lastWeatherLocation: null, // Track last significant move (0.5 deg) for weather
 			lastGeoLocation: null // Track last move (0.001 deg) for geocoding
 		};
@@ -1285,12 +1374,37 @@
 		els.viewport.addEventListener('mousedown', e => { dragging = true; lx = e.clientX; ly = e.clientY; });
 		window.addEventListener('mousemove', e => {
 			if (!dragging) return;
-			state.az += (e.clientX - lx) * 0.5;
-			state.tilt += (e.clientY - ly) * 0.5;
+			state.az -= (e.clientX - lx) * 0.5;
+			state.tilt -= (e.clientY - ly) * 0.5;
 			lx = e.clientX; ly = e.clientY;
 			sync();
 		});
 		window.addEventListener('mouseup', () => dragging = false);
+
+		// --- TOUCH EVENTS FOR MOBILE ---
+		els.viewport.addEventListener('touchstart', e => {
+			if (e.touches.length === 1) {
+				dragging = true;
+				lx = e.touches[0].clientX;
+				ly = e.touches[0].clientY;
+				// Prevent default scrolling while rotating the 3D model
+				if(e.cancelable) e.preventDefault();
+			}
+		}, { passive: false });
+
+		els.viewport.addEventListener('touchmove', e => {
+			if (!dragging) return;
+			const t = e.touches[0];
+			state.az -= (t.clientX - lx) * 0.5;
+			state.tilt -= (t.clientY - ly) * 0.5;
+			lx = t.clientX;
+			ly = t.clientY;
+			sync();
+			// crucial to stop page scrolling while rotating
+			if(e.cancelable) e.preventDefault();
+		}, { passive: false });
+
+		window.addEventListener('touchend', () => dragging = false);
 
 		els.optRangeMode.addEventListener('change', (e) => {
 			els.optMonthsRow.style.display = (e.target.value === 'period') ? 'flex' : 'none';
@@ -1809,33 +1923,81 @@
 		}
 
 		// --- AUTO LOCATION ---
-		async function detectLocation() {
-			try {
-				// Using ip-api.com which supports CORS
-				const resp = await fetch('http://ip-api.com/json/?fields=lat,lon,offset');
-				if (!resp.ok) throw new Error("Blocked");
-				const data = await resp.json();
-
-				if (data.lat && data.lon) {
-					els.latI.value = data.lat.toFixed(1);
-					els.lonI.value = data.lon.toFixed(1);
-
-					// offset is in seconds from UTC
-					els.utcI.value = data.offset / 3600;
-				}
-
-				els.locName.innerText = "Loading...";
-				read(); // This will trigger both weather and geocoding fetches if state.last*Locations are null
-			} catch (e) {
-				// Fallback to Kyiv
+		function detectLocation() {
+			const fallback = () => {
 				console.log("Location fetch failed, using fallback (Kyiv).");
 				els.latI.value = "50.5";
 				els.lonI.value = "30.5";
 				els.utcI.value = "2";
 				els.locName.innerText = "Loading...";
 				read();
+			};
+
+			// Define the callback function expected by geojs.io
+			window.geoip = (data) => {
+				// Cleanup
+				delete window.geoip;
+				const script = document.getElementById('geoJsonP');
+				if (script) script.remove();
+
+				if (data && data.latitude && data.longitude) {
+					els.latI.value = data.latitude;
+					els.lonI.value = data.longitude;
+					// Note: We don't get UTC offset here, but read() triggers
+					// Open-Meteo which will auto-fill the correct timezone
+					// based on these coordinates.
+
+					els.locName.innerText = "Loading...";
+					read();
+				} else {
+					fallback();
+				}
+			};
+
+			// Inject Script (JSONP)
+			// geojs.io uses a fixed callback name 'geoip'
+			const script = document.createElement('script');
+			script.id = 'geoJsonP';
+			script.src = 'https://get.geojs.io/v1/ip/geo.js';
+			script.onerror = () => {
+				fallback();
+			};
+			document.body.appendChild(script);
+		}
+
+		// --- RESPONSIVE 3D ZOOM ---
+		function fitViewport() {
+			const w = els.viewport.clientWidth;
+			const h = els.viewport.clientHeight;
+			const baseSize = 700; // Reference size for the 3D floor
+
+			// Calculate scale to fit
+			let scale = Math.min(w / baseSize, h / baseSize);
+			if (scale > 1) scale = 1;
+
+			// Center Offset: The scene is visually top-heavy due to the sun arch.
+			// The sun path extends ~260px 'up' visually, while the floor extends ~150px 'down'.
+			// We shift the whole world down by ~50px (scaled) to center the visual mass.
+			const yOffset = 50 * scale;
+
+			const world = document.querySelector('.world');
+			if (world) {
+				// We apply transforms in this specific order:
+				// 1. translateY: Shifts the scene down so the top of the sun path is visible.
+				// 2. scale: Resizes the model uniformly (prevents aspect ratio distortion).
+				// 3. rotateX: Tilts the model for the 3D effect.
+				world.style.transform = `translateY(${yOffset}px) scale(${scale}) rotateX(60deg)`;
 			}
 		}
+
+		// Listen for resize events to update Zoom and Chart
+		window.addEventListener('resize', () => {
+			fitViewport();
+			renderChart(); // Redraw chart to fit new width
+		});
+
+		// Call once on startup
+		fitViewport();
 
 		// Trigger detection
 		detectLocation();

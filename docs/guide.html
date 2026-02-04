@@ -6,243 +6,243 @@
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-2S6C3Y8ENM"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","G-2S6C3Y8ENM");</script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="icon" href="favicon.ico">
-    <title>Solar Planner - User Guide</title>
-    <style>
-        :root {
-            --bg: #0f172a;
-            --panel: #1e293b;
-            --border: #334155;
-            --text: #f1f5f9;
-            --accent: #fbbf24;
-            --accent-dim: rgba(251, 191, 36, 0.2);
-            --blue: #38bdf8;
-        }
+	<title>Solar Planner - User Guide</title>
+	<style>
+		:root {
+			--bg: #0f172a;
+			--panel: #1e293b;
+			--border: #334155;
+			--text: #f1f5f9;
+			--accent: #fbbf24;
+			--accent-dim: rgba(251, 191, 36, 0.2);
+			--blue: #38bdf8;
+		}
 
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-        }
+		body {
+			font-family: 'Segoe UI', system-ui, sans-serif;
+			background-color: var(--bg);
+			color: var(--text);
+			line-height: 1.6;
+			margin: 0;
+			padding: 0;
+			display: flex;
+			justify-content: center;
+		}
 
-        .container {
-            max-width: 800px;
-            padding: 40px 20px;
-        }
+		.container {
+			max-width: 800px;
+			padding: 40px 20px;
+		}
 
-        header {
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 20px;
-            margin-bottom: 40px;
-            text-align: center;
-        }
+		header {
+			border-bottom: 2px solid var(--border);
+			padding-bottom: 20px;
+			margin-bottom: 40px;
+			text-align: center;
+		}
 
-        h1 {
-            color: var(--accent);
-            margin: 0;
-            font-size: 2.5rem;
-        }
+		h1 {
+			color: var(--accent);
+			margin: 0;
+			font-size: 2.5rem;
+		}
 
-        h2 {
-            color: var(--accent);
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 10px;
-            margin-top: 40px;
-        }
+		h2 {
+			color: var(--accent);
+			border-bottom: 1px solid var(--border);
+			padding-bottom: 10px;
+			margin-top: 40px;
+		}
 
-        h3 {
-            color: var(--blue);
-            margin-top: 25px;
-        }
+		h3 {
+			color: var(--blue);
+			margin-top: 25px;
+		}
 
-        .card {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
+		.card {
+			background: var(--panel);
+			border: 1px solid var(--border);
+			border-radius: 8px;
+			padding: 20px;
+			margin-bottom: 20px;
+		}
 
-        code {
-            background: #0f172a;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: monospace;
-            color: var(--accent);
-        }
+		code {
+			background: #0f172a;
+			padding: 2px 6px;
+			border-radius: 4px;
+			font-family: monospace;
+			color: var(--accent);
+		}
 
-        ul {
-            padding-left: 20px;
-        }
+		ul {
+			padding-left: 20px;
+		}
 
-        li {
-            margin-bottom: 10px;
-        }
+		li {
+			margin-bottom: 10px;
+		}
 
-        .ideal {
-            color: var(--accent);
-            font-weight: bold;
-        }
+		.ideal {
+			color: var(--accent);
+			font-weight: bold;
+		}
 
-        .real {
-            color: var(--blue);
-            font-weight: bold;
-        }
+		.real {
+			color: var(--blue);
+			font-weight: bold;
+		}
 
-        .btn-back {
-            display: inline-block;
-            background: var(--accent);
-            color: #0f172a;
-            padding: 10px 20px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: bold;
-            margin-bottom: 20px;
-            transition: transform 0.1s;
-        }
+		.btn-back {
+			display: inline-block;
+			background: var(--accent);
+			color: #0f172a;
+			padding: 10px 20px;
+			border-radius: 6px;
+			text-decoration: none;
+			font-weight: bold;
+			margin-bottom: 20px;
+			transition: transform 0.1s;
+		}
 
-        .btn-back:hover {
-            transform: scale(1.02);
-            filter: brightness(1.1);
-        }
+		.btn-back:hover {
+			transform: scale(1.02);
+			filter: brightness(1.1);
+		}
 
-        footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(4px);
-            border-top: 1px solid var(--border);
-            color: #64748b;
-            font-size: 0.7rem;
-            text-align: center;
-            padding: 4px 0;
-            z-index: 1000;
-            pointer-events: none;
-            letter-spacing: 0.05em;
-        }
-    </style>
+		footer {
+			position: fixed;
+			bottom: 0;
+			left: 0;
+			width: 100%;
+			background: rgba(15, 23, 42, 0.8);
+			backdrop-filter: blur(4px);
+			border-top: 1px solid var(--border);
+			color: #64748b;
+			font-size: 0.7rem;
+			text-align: center;
+			padding: 4px 0;
+			z-index: 1000;
+			pointer-events: none;
+			letter-spacing: 0.05em;
+		}
+	</style>
 </head>
 
 <body>
-    <div class="container">
-        <header>
-            <h1>☀️ Solar Planner Guide</h1>
-            <p>Mastering your solar configuration and efficiency tracking.</p>
-        </header>
+	<div class="container">
+		<header>
+			<h1>☀️ Solar Planner Guide</h1>
+			<p>Mastering your solar configuration and efficiency tracking.</p>
+		</header>
 
-        <section id="introduction">
-            <h2>Overview</h2>
-            <p>Solar Planner is a high-precision tool designed to help you optimize solar panel placement. It combines
-                astronomical calculations with historical weather patterns to give you the most accurate energy
-                generation estimates possible.</p>
-        </section>
+		<section id="introduction">
+			<h2>Overview</h2>
+			<p>Solar Planner is a high-precision tool designed to help you optimize solar panel placement. It combines
+				astronomical calculations with historical weather patterns to give you the most accurate energy
+				generation estimates possible.</p>
+		</section>
 
-        <section id="location">
-            <h2>1. Location & Environment</h2>
-            <div class="card">
-                <h3>📍 Finding Your Spot</h3>
-                <p>The app automatically detects your location via IP. However, for maximum precision, use the
-                    <strong>"Pick on Map"</strong> button. This allows you to select your exact installation site.
-                </p>
-                <ul>
-                    <li><strong>Reverse Geocoding</strong>: The app will display your city and country name
-                        automatically.</li>
-                    <li><strong>High Precision</strong>: We cache location names at a ~110m precision (0.001°) to ensure
-                        nearby sites get accurate labels.</li>
-                    <li><strong>Timezones</strong>: Timezone offsets update automatically based on your selected
-                        coordinates.</li>
-                </ul>
-            </div>
-        </section>
+		<section id="location">
+			<h2>1. Location & Environment</h2>
+			<div class="card">
+				<h3>📍 Finding Your Spot</h3>
+				<p>The app automatically detects your location via IP. However, for maximum precision, use the
+					<strong>"Pick on Map"</strong> button. This allows you to select your exact installation site.
+				</p>
+				<ul>
+					<li><strong>Reverse Geocoding</strong>: The app will display your city and country name
+						automatically.</li>
+					<li><strong>High Precision</strong>: We cache location names at a ~110m precision (0.001°) to ensure
+						nearby sites get accurate labels.</li>
+					<li><strong>Timezones</strong>: Timezone offsets update automatically based on your selected
+						coordinates.</li>
+				</ul>
+			</div>
+		</section>
 
 
 
-        <section id="orientation">
-            <h2>2. Panel Orientation</h2>
-            <div class="card">
-                <h3>🔄 Azimuth & Tilt</h3>
-                <p>Your panel's orientation is critical to its efficiency:</p>
-                <ul>
-                    <li><strong>Azimuth</strong>: The horizontal direction the panel faces. <code>180°</code> is due
-                        South (Northern Hemisphere ideal).</li>
-                    <li><strong>Tilt</strong>: The vertical angle. <code>0°</code> is flat, <code>90°</code> is
-                        vertical.</li>
-                </ul>
-                <h3>🛠️ Interactive 3D Control</h3>
-                <p>You can drag the 3D panel directly to adjust its orientation, or use the sliders in the sidebar.</p>
-                <p><strong>Optimize</strong>: Use the <strong>"Optimize Orientation"</strong> button to find the
-                    absolute best
-                    theoretical orientation. You can now choose between:</p>
-                <ul>
-                    <li><strong>Selected Day</strong>: Optimizes for the currently viewed date.</li>
-                    <li><strong>Custom Period</strong>: Select a sequence of months (e.g., April to October) to find the
-                        best balanced orientation for a seasonal installation.</li>
-                    <li><strong>Full Year</strong>: Finds the ideal tilt and azimuth for maximum annual energy yield.
-                    </li>
-                </ul>
-                <p><em>Pro Tip: The app uses an optimized algorithm that balances performance and accuracy by sampling
-                        multiple representative days across your selected range.</em></p>
-            </div>
-        </section>
+		<section id="orientation">
+			<h2>2. Panel Orientation</h2>
+			<div class="card">
+				<h3>🔄 Azimuth & Tilt</h3>
+				<p>Your panel's orientation is critical to its efficiency:</p>
+				<ul>
+					<li><strong>Azimuth</strong>: The horizontal direction the panel faces. <code>180°</code> is due
+						South (Northern Hemisphere ideal).</li>
+					<li><strong>Tilt</strong>: The vertical angle. <code>0°</code> is flat, <code>90°</code> is
+						vertical.</li>
+				</ul>
+				<h3>🛠️ Interactive 3D Control</h3>
+				<p>You can drag the 3D panel directly to adjust its orientation, or use the sliders in the sidebar.</p>
+				<p><strong>Optimize</strong>: Use the <strong>"Optimize Orientation"</strong> button to find the
+					absolute best
+					theoretical orientation. You can now choose between:</p>
+				<ul>
+					<li><strong>Selected Day</strong>: Optimizes for the currently viewed date.</li>
+					<li><strong>Custom Period</strong>: Select a sequence of months (e.g., April to October) to find the
+						best balanced orientation for a seasonal installation.</li>
+					<li><strong>Full Year</strong>: Finds the ideal tilt and azimuth for maximum annual energy yield.
+					</li>
+				</ul>
+				<p><em>Pro Tip: The app uses an optimized algorithm that balances performance and accuracy by sampling
+						multiple representative days across your selected range.</em></p>
+			</div>
+		</section>
 
-        <section id="weather">
-            <h2>3. Energy Estimates</h2>
-            <div class="card">
-                <h3>Amber vs Blue: The Core Metrics</h3>
-                <p>You will see two sets of numbers throughout the app:</p>
-                <ul>
-                    <li><span class="ideal">Ideal (Amber)</span>: The energy you would generate under clear, perfect sky
-                        conditions.</li>
-                    <li><span class="real">Real (Blue)</span>: The weather-adjusted estimate. This uses <strong>3 years
-                            of historical cloud cover data</strong> from Open-Meteo to predict realistic generation
-                        based on your local climate.</li>
-                </ul>
-                <h3>Efficiency Score</h3>
-                <p>The efficiency percentage compares your current setup against a perfectly oriented, unshaded panel at
-                    your location. Aim for the highest score possible!</p>
-            </div>
-        </section>
+		<section id="weather">
+			<h2>3. Energy Estimates</h2>
+			<div class="card">
+				<h3>Amber vs Blue: The Core Metrics</h3>
+				<p>You will see two sets of numbers throughout the app:</p>
+				<ul>
+					<li><span class="ideal">Ideal (Amber)</span>: The energy you would generate under clear, perfect sky
+						conditions.</li>
+					<li><span class="real">Real (Blue)</span>: The weather-adjusted estimate. This uses <strong>3 years
+							of historical cloud cover data</strong> from Open-Meteo to predict realistic generation
+						based on your local climate.</li>
+				</ul>
+				<h3>Efficiency Score</h3>
+				<p>The efficiency percentage compares your current setup against a perfectly oriented, unshaded panel at
+					your location. Aim for the highest score possible!</p>
+			</div>
+		</section>
 
-        <section id="shadow">
-            <h2>4. Shadow Modeling</h2>
-            <div class="card">
-                <h3>🚫 Dealing with Obstacles</h3>
-                <p>If trees or buildings block the sun at certain times, use the <strong>Shadow (Obstacles)</strong>
-                    sliders. Define the "From" and "To" times when your panel is in shadow. The app will immediately
-                    recalculate and show the energy loss on the chart and in your scores.</p>
-            </div>
-        </section>
+		<section id="shadow">
+			<h2>4. Shadow Modeling</h2>
+			<div class="card">
+				<h3>🚫 Dealing with Obstacles</h3>
+				<p>If trees or buildings block the sun at certain times, use the <strong>Shadow (Obstacles)</strong>
+					sliders. Define the "From" and "To" times when your panel is in shadow. The app will immediately
+					recalculate and show the energy loss on the chart and in your scores.</p>
+			</div>
+		</section>
 
-        <section id="persistence">
-            <h2>5. Comparisons & Saving</h2>
-            <div class="card">
-                <h3>💾 Saved Configurations</h3>
-                <p>Found a good setup? Hit <strong>"Save Configuration"</strong>. This stores the setup permanently on
-                    your device (using IndexedDB).</p>
-                <ul>
-                    <li><strong>Full Context</strong>: We save your Location, Azimuth, Tilt, Nominal Power (Watts),
-                        Shadow ranges, and Timezone.</li>
-                    <li><strong>Quick Load</strong>: Simply <strong>click a row</strong> in the table to instantly
-                        restore that entire configuration to the app.</li>
-                    <li><strong>Focus</strong>: The comparison table highlights <strong>Yearly energy totals</strong>,
-                        allowing you to weigh the long-term benefit of different installation spots.</li>
-                </ul>
-            </div>
-        </section>
+		<section id="persistence">
+			<h2>5. Comparisons & Saving</h2>
+			<div class="card">
+				<h3>💾 Saved Configurations</h3>
+				<p>Found a good setup? Hit <strong>"Save Configuration"</strong>. This stores the setup permanently on
+					your device (using IndexedDB).</p>
+				<ul>
+					<li><strong>Full Context</strong>: We save your Location, Azimuth, Tilt, Nominal Power (Watts),
+						Shadow ranges, and Timezone.</li>
+					<li><strong>Quick Load</strong>: Simply <strong>click a row</strong> in the table to instantly
+						restore that entire configuration to the app.</li>
+					<li><strong>Focus</strong>: The comparison table highlights <strong>Yearly energy totals</strong>,
+						allowing you to weigh the long-term benefit of different installation spots.</li>
+				</ul>
+			</div>
+		</section>
 
-        <footer>
-            <p>Copyright © 2026 Taras Greben — solar.eTaras.com</p>
-        </footer>
-    </div>
+		<footer>
+			<p>Copyright © 2026 Taras Greben — solar.eTaras.com</p>
+		</footer>
+	</div>
 </body>
 
 </html>
