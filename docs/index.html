@@ -109,7 +109,7 @@
 		/* CONTROLS (LEFT) */
 		.sidebar {
 			flex: 0 1 300px;
-			min-width: 240px;
+			min-width: 200px;
 			background: var(--panel);
 			border-right: 1px solid var(--border);
 			display: flex;
@@ -167,8 +167,8 @@
 
 		/* VIEWPORT (CENTER) */
 		.viewport {
-			flex: 1 1 400px;
-			min-width: 320px;
+			flex: 2 1 0;
+			min-width: 340px;
 			position: relative;
 			background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
 			perspective: 1000px;
@@ -178,6 +178,7 @@
 			justify-content: center;
 			cursor: grab;
 			user-select: none;
+			touch-action: pan-y;
 		}
 
 		.viewport:active {
@@ -371,10 +372,10 @@
 		/* HUD (Floating) */
 		.hud {
 			position: absolute;
-			bottom: 20px;
-			left: 20px;
+			bottom: 30px;
+			left: 10px;
 			background: rgba(15, 23, 42, 0.9);
-			padding: 15px;
+			padding: 8px 10px;
 			border-radius: 8px;
 			border: 1px solid var(--border);
 			display: flex;
@@ -382,10 +383,16 @@
 			backdrop-filter: blur(5px);
 		}
 
+		.hud .group {
+			flex-direction: row;
+			align-items: center;
+			gap: 8px;
+		}
+
 		/* RESULTS (RIGHT) */
 		.results {
 			flex: 0 1 340px;
-			min-width: 280px;
+			min-width: 200px;
 			background: var(--panel);
 			border-left: 1px solid var(--border);
 			padding: 20px;
@@ -543,8 +550,15 @@
 
 			/* Make viewport touch-friendly and fit 3D scene */
 			.viewport {
-				min-height: 450px;
-				overflow: hidden; /* clip the large compass floor */
+				width: 100%;
+				flex: none;
+				height: auto;
+				aspect-ratio: 1/1;
+				max-height: 60vh;
+				min-height: 200px;
+				min-width: 200px;
+				overflow: hidden;
+				touch-action: pan-y;
 			}
 
 			.sidebar,
@@ -558,10 +572,10 @@
 
 			/* Adjust HUD to not cover the panel on small screens */
 			.hud {
-				bottom: 10px;
-				left: 10px;
-				right: 10px;
-				padding: 10px;
+				bottom: 5px;
+				left: 5px;
+				right: 5px;
+				padding: 5px;
 				justify-content: center;
 			}
 
@@ -1375,36 +1389,68 @@
 		window.addEventListener('mousemove', e => {
 			if (!dragging) return;
 			state.az -= (e.clientX - lx) * 0.5;
-			state.tilt -= (e.clientY - ly) * 0.5;
+			state.tilt += (e.clientY - ly) * 0.5;
 			lx = e.clientX; ly = e.clientY;
 			sync();
 		});
 		window.addEventListener('mouseup', () => dragging = false);
 
-		// --- TOUCH EVENTS FOR MOBILE ---
+		// --- SMART TOUCH EVENTS FOR MOBILE ---
+		let touchState = {
+			active: false,
+			mode: null, // 'rotate' or 'scroll'
+			sx: 0, sy: 0 // start positions
+		};
+
 		els.viewport.addEventListener('touchstart', e => {
 			if (e.touches.length === 1) {
-				dragging = true;
-				lx = e.touches[0].clientX;
-				ly = e.touches[0].clientY;
-				// Prevent default scrolling while rotating the 3D model
-				if(e.cancelable) e.preventDefault();
+				touchState.active = true;
+				touchState.mode = null;
+				touchState.sx = e.touches[0].clientX;
+				touchState.sy = e.touches[0].clientY;
+				lx = touchState.sx;
+				ly = touchState.sy;
+			}
+		}, { passive: true });
+
+		els.viewport.addEventListener('touchmove', e => {
+			if (!touchState.active) return;
+
+			const t = e.touches[0];
+			const dx = t.clientX - touchState.sx;
+			const dy = t.clientY - touchState.sy;
+
+			// 1. Determine Intent (only on the first few pixels of movement)
+			if (touchState.mode === null) {
+				if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+					// If movement is more horizontal than vertical, we rotate
+					if (Math.abs(dx) > Math.abs(dy)) {
+						touchState.mode = 'rotate';
+					} else {
+						touchState.mode = 'scroll';
+						touchState.active = false; // Stop tracking so page scrolls normally
+					}
+				}
+				return; // Wait for next frame to have a clear mode
+			}
+
+			// 2. Interaction Mode
+			if (touchState.mode === 'rotate') {
+				// Prevent page scroll only if we are rotating
+				if (e.cancelable) e.preventDefault();
+
+				state.az -= (t.clientX - lx) * 0.5;
+				state.tilt += (t.clientY - ly) * 0.5;
+				lx = t.clientX;
+				ly = t.clientY;
+				sync();
 			}
 		}, { passive: false });
 
-		els.viewport.addEventListener('touchmove', e => {
-			if (!dragging) return;
-			const t = e.touches[0];
-			state.az -= (t.clientX - lx) * 0.5;
-			state.tilt -= (t.clientY - ly) * 0.5;
-			lx = t.clientX;
-			ly = t.clientY;
-			sync();
-			// crucial to stop page scrolling while rotating
-			if(e.cancelable) e.preventDefault();
-		}, { passive: false });
-
-		window.addEventListener('touchend', () => dragging = false);
+		window.addEventListener('touchend', () => {
+			touchState.active = false;
+			touchState.mode = null;
+		});
 
 		els.optRangeMode.addEventListener('change', (e) => {
 			els.optMonthsRow.style.display = (e.target.value === 'period') ? 'flex' : 'none';
@@ -1965,28 +2011,30 @@
 			document.body.appendChild(script);
 		}
 
-		// --- RESPONSIVE 3D ZOOM ---
+		// --- SMART 3D POSITIONING ---
 		function fitViewport() {
 			const w = els.viewport.clientWidth;
 			const h = els.viewport.clientHeight;
-			const baseSize = 700; // Reference size for the 3D floor
+			const hud = document.querySelector('.hud');
+			const hudHeight = hud ? hud.offsetHeight : 0;
 
-			// Calculate scale to fit
-			let scale = Math.min(w / baseSize, h / baseSize);
+			// Reference: The scene extends roughly 260px UP (sun arch)
+			// and 150px DOWN (floor edge) from the center.
+			const visualTopBound = 260;
+			const visualBottomBound = 150;
+			const totalVisualHeight = visualTopBound + visualBottomBound;
+
+			// 1. Calculate Scale based on the visual height + HUD avoidance
+			const availableHeight = h - (hudHeight + 40); // 20px padding
+			let scale = Math.min(w / 600, availableHeight / totalVisualHeight);
 			if (scale > 1) scale = 1;
-
-			// Center Offset: The scene is visually top-heavy due to the sun arch.
-			// The sun path extends ~260px 'up' visually, while the floor extends ~150px 'down'.
-			// We shift the whole world down by ~50px (scaled) to center the visual mass.
-			const yOffset = 50 * scale;
+			if (scale < 0.4) scale = 0.4; // Don't let it get microscopic
 
 			const world = document.querySelector('.world');
 			if (world) {
-				// We apply transforms in this specific order:
-				// 1. translateY: Shifts the scene down so the top of the sun path is visible.
-				// 2. scale: Resizes the model uniformly (prevents aspect ratio distortion).
-				// 3. rotateX: Tilts the model for the 3D effect.
-				world.style.transform = `translateY(${yOffset}px) scale(${scale}) rotateX(60deg)`;
+				// Use translate3d for better performance on mobile
+				// Transform order: Scale -> Move -> Rotate Camera
+				world.style.transform = `scale(${scale}) rotateX(60deg)`;
 			}
 		}
 
